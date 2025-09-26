@@ -1,9 +1,10 @@
 import streamlit as st
 import os
 from dotenv import load_dotenv
-from rag_core import build_or_load_vector_store, get_qa_chain, get_answer
+from rag.rag_core import build_or_load_vector_store, get_qa_chain, get_answer
 from etl.document_processor import load_and_process_documents
 import tempfile
+from rag.logger import logger
 
 # 加载环境变量
 load_dotenv()
@@ -46,19 +47,8 @@ debug_mode = st.sidebar.checkbox("调试模式")
 # 初始化会话状态
 if 'qa_chain' not in st.session_state:
     with st.spinner("正在初始化问答系统..."):
-        # 处理数据目录中的文档
-        data_path = "./data"
-        if not os.path.exists(data_path):
-            os.makedirs(data_path)
-        
-        # 加载和处理文档
-        if debug_mode:
-            st.write("正在加载文档...")
-        
-        documents = load_and_process_documents(data_path)
-        
-        if debug_mode:
-            st.write(f"已加载 {len(documents)} 个文档片段")
+        # 创建空的文档列表
+        documents = []
         
         # 处理上传的文件
         if uploaded_files:
@@ -72,20 +62,17 @@ if 'qa_chain' not in st.session_state:
             uploaded_documents = load_and_process_documents(temp_dir)
             documents.extend(uploaded_documents)
         
-        # 构建或加载向量库
-        if debug_mode:
-            st.write("正在构建向量库...")
+        # 直接加载已存在的向量库，不重新处理文档目录中的文件
+        logger.info("正在加载向量库...")
             
         vector_store = build_or_load_vector_store(documents, "./chroma_db")
         
         # 创建QA链
-        if debug_mode:
-            st.write("正在创建问答链...")
+        logger.info("正在创建问答链...")
             
         st.session_state.qa_chain = get_qa_chain(vector_store)
         
-        if debug_mode:
-            st.write("系统初始化完成!")
+        logger.info("系统初始化完成!")
 
 # 主界面 - 问题输入
 question = st.chat_input("请输入您的问题...")
@@ -93,13 +80,11 @@ question = st.chat_input("请输入您的问题...")
 # 处理问题和显示答案
 if question:
     with st.spinner("正在生成答案..."):
-        if debug_mode:
-            st.write(f"问题: {question}")
+        logger.info(f"收到问题: {question}")
             
         result = get_answer(question, st.session_state.qa_chain)
         
-        if debug_mode:
-            st.write("答案生成完成")
+        logger.info("答案生成完成")
         
         # 显示问题
         st.subheader("问题")

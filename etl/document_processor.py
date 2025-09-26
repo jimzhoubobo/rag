@@ -1,64 +1,74 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-文档处理ETL模块
-负责加载和处理指定目录下的所有.pdf和.txt文档
+文档处理模块
+负责加载和处理PDF、TXT等文档
 """
 
 import os
-import glob
-from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import PyPDFLoader, TextLoader
-from langchain.docstore.document import Document
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+import json
+from rag.logger import logger
 
 
 def load_and_process_documents(data_path: str):
     """
-    加载并处理指定目录下的所有.pdf和.txt文档，返回分块后的文档列表。
+    加载并处理指定路径下的所有文档
     
     Args:
         data_path (str): 文档目录路径
         
     Returns:
-        list: 分块后的文档列表
+        list: 处理后的文档片段列表
     """
+    logger.info(f"开始加载文档，路径: {data_path}")
+    
     documents = []
     
-    # 加载PDF文件
-    pdf_files = glob.glob(os.path.join(data_path, "*.pdf"))
-    print(f"找到 {len(pdf_files)} 个PDF文件")
-    for pdf_file in pdf_files:
-        try:
-            loader = PyPDFLoader(pdf_file)
-            docs = loader.load()
-            documents.extend(docs)
-            print(f"已加载PDF文件: {pdf_file}, 文档数: {len(docs)}")
-        except Exception as e:
-            print(f"加载PDF文件 {pdf_file} 时出错: {e}")
+    # 支持的文件类型
+    supported_extensions = {'.pdf', '.txt'}
     
-    # 加载TXT文件
-    txt_files = glob.glob(os.path.join(data_path, "*.txt"))
-    print(f"找到 {len(txt_files)} 个TXT文件")
-    for txt_file in txt_files:
-        try:
-            loader = TextLoader(txt_file, encoding='utf-8')
-            docs = loader.load()
-            documents.extend(docs)
-            print(f"已加载TXT文件: {txt_file}, 文档数: {len(docs)}")
-        except Exception as e:
-            print(f"加载TXT文件 {txt_file} 时出错: {e}")
+    # 遍历目录中的所有文件
+    for root, dirs, files in os.walk(data_path):
+        for file in files:
+            file_path = os.path.join(root, file)
+            file_extension = os.path.splitext(file)[1].lower()
+            
+            try:
+                if file_extension == '.pdf':
+                    logger.info(f"加载PDF文件: {file_path}")
+                    loader = PyPDFLoader(file_path)
+                    pdf_docs = loader.load()
+                    logger.info(f"已加载PDF文件: {file_path}, 文档数: {len(pdf_docs)}")
+                    documents.extend(pdf_docs)
+                    
+                elif file_extension == '.txt':
+                    logger.info(f"加载TXT文件: {file_path}")
+                    loader = TextLoader(file_path, encoding='utf-8')
+                    txt_docs = loader.load()
+                    logger.info(f"已加载TXT文件: {file_path}, 文档数: {len(txt_docs)}")
+                    documents.extend(txt_docs)
+                    
+            except Exception as e:
+                logger.error(f"加载文件 {file_path} 时出错: {e}")
+                continue
     
-    # 文本分割
+    # 如果没有找到支持的文件
+    if not documents:
+        logger.warning(f"在路径 {data_path} 中未找到支持的文档文件")
+        return []
+    
+    # 分割文档
+    logger.info(f"开始分割文档，总文档数: {len(documents)}")
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=500,
-        chunk_overlap=50,
-        length_function=len,
-        separators=["\n\n", "\n", "。", "！", "？", "；", "，", " "]
+        chunk_size=1000,
+        chunk_overlap=200
     )
+    splits = text_splitter.split_documents(documents)
+    logger.info(f"文档分割完成，总共 {len(splits)} 个片段")
     
-    split_documents = text_splitter.split_documents(documents)
-    print(f"文档分割完成，总共 {len(split_documents)} 个片段")
-    return split_documents
+    return splits
 
 
 def extract_content_and_store(documents, storage_path: str = None):
@@ -87,15 +97,14 @@ def extract_content_and_store(documents, storage_path: str = None):
             # 确保存储路径存在
             os.makedirs(storage_path, exist_ok=True)
             # 创建文件名
-            filename = f"document_{i}.txt"
+            filename = f"document_{i}.json"
             file_path = os.path.join(storage_path, filename)
             
             # 写入内容和元数据
             with open(file_path, "w", encoding="utf-8") as f:
-                f.write(f"Content:\n{doc.page_content}\n\n")
-                f.write(f"Metadata:\n{str(doc.metadata)}\n")
+                json.dump(content, f, ensure_ascii=False, indent=4)
     
-    print(f"已提取并处理 {len(extracted_content)} 个文档片段")
+    logger.info(f"已提取并处理 {len(extracted_content)} 个文档片段")
     return extracted_content
 
 
@@ -107,4 +116,4 @@ if __name__ == "__main__":
     
     documents = load_and_process_documents(data_path)
     extracted = extract_content_and_store(documents, "../processed_data")
-    print(f"处理完成，共处理 {len(extracted)} 个文档片段")
+    logger.info(f"处理完成，共处理 {len(extracted)} 个文档片段")
