@@ -1,2 +1,50 @@
-# rag
-Search for related projects, including RAG ETL correlation analysis, rough sorting, refined sorting, reordering, product support, etc. operations.
+# 中医理疗智能问答系统
+
+这是一个基于RAG（Retrieval-Augmented Generation）技术的中医理疗问答系统，用户可以通过网页界面提问与中医理疗相关的问题，并获得基于专业文档的智能回答。
+
+## 功能特点
+
+- 基于《中医学基础》等专业文档进行问答
+- 支持PDF和TXT格式文档
+- 使用Streamlit构建友好的Web界面
+- 集成DeepSeek大语言模型提供智能回答
+- 使用Chroma向量数据库进行高效检索
+- 包含安全免责声明，确保合理使用
+
+## 安装步骤
+
+1. 克隆或下载本项目到本地
+
+2. 安装项目依赖：
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+## 配置说明
+
+1. 在 `.env` 文件中配置您的API密钥：
+   ```
+   DEEPSEEK_API_KEY='your_api_key_here'
+   ```
+
+## 数据准备
+
+将《中医学基础》等相关文档放入 `./data` 文件夹中，系统支持PDF和TXT格式的文档。
+
+## 运行项目
+
+在终端中执行以下命令启动应用：
+```bash
+streamlit run app.py
+```
+
+## 访问系统
+
+运行后，在浏览器中打开以下地址访问系统：
+```
+http://localhost:8501
+```
+
+## 安全免责声明
+
+本系统提供的所有信息仅供学习和参考之用，不能替代专业医生的诊断和治疗建议。如有实际健康问题，请务必咨询合格的中医师或其他医疗专业人士。本系统不对因使用或不正确使用本系统提供的信息而导致的任何后果负责。
