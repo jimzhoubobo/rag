@@ -44,7 +44,7 @@ def test_vector_store(documents):
     """测试向量库功能"""
     logger.info("=== 测试向量库功能 ===")
     try:
-        from rag_core import build_or_load_vector_store
+        from rag.rag_core import build_or_load_vector_store
         persist_directory = "./chroma_db"
         
         if documents is None:
@@ -76,7 +76,7 @@ def test_qa_chain(vector_store):
     """测试问答链功能"""
     logger.info("=== 测试问答链功能 ===")
     try:
-        from rag_core import get_qa_chain
+        from rag.rag_core import get_qa_chain
         qa_chain = get_qa_chain(vector_store)
         logger.info("问答链创建成功")
         return qa_chain
@@ -89,7 +89,7 @@ def test_get_answer(qa_chain):
     """测试获取答案功能"""
     logger.info("=== 测试获取答案功能 ===")
     try:
-        from rag_core import get_answer
+        from rag.rag_core import get_answer
         test_question = "什么是中医理疗？"
         logger.info(f"测试问题: {test_question}")
         
