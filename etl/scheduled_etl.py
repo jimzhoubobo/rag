@@ -9,13 +9,15 @@ import schedule
 import time
 import os
 import sys
-from datetime import datetime
-from rag.logger import logger
-
 # 添加项目根目录到Python路径
-sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..")
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, project_root)
 
-from etl.document_processor import load_and_process_documents, extract_content_and_store
+from etl.document_processor import load_and_process_documents, extract_and_save_content
+from etl.vector_builder import build_vector_store
+from log.logger import logger
+from log.logger import logger
+from constant.constants import ProjectConstants
 
 
 def etl_job():
@@ -26,8 +28,9 @@ def etl_job():
     
     try:
         # 定义数据路径
-        data_path = "./data"
-        processed_data_path = "./processed_data"
+        data_path = ProjectConstants.get_data_path()
+        processed_data_path = ProjectConstants.get_processed_data_path()
+        vector_store_path = ProjectConstants.get_chroma_db_path()
         
         # 确保数据目录存在
         os.makedirs(data_path, exist_ok=True)
@@ -37,7 +40,11 @@ def etl_job():
         documents = load_and_process_documents(data_path)
         
         # 提取内容并存储
-        extracted_content = extract_content_and_store(documents, processed_data_path)
+        extracted_content = extract_and_save_content(documents, processed_data_path)
+        
+        # 构建向量库
+        if documents:
+            build_vector_store(documents, vector_store_path)
         
         logger.info(f"ETL任务执行完成，共处理 {len(extracted_content)} 个文档片段")
         

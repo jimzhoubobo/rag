@@ -16,7 +16,8 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..")
 # 加载环境变量
 load_dotenv()
 
-from rag.logger import logger
+from log.logger import logger
+from constant.constants import ProjectConstants
 
 def test_document_loading():
     """测试文档加载功能"""
@@ -44,8 +45,8 @@ def test_vector_store(documents):
     """测试向量库功能"""
     logger.info("=== 测试向量库功能 ===")
     try:
-        from rag.rag_core import build_or_load_vector_store
-        persist_directory = "./chroma_db"
+        from rag.rag_core import load_vector_store_with_cache
+        persist_directory = ProjectConstants.get_chroma_db_path()
         
         if documents is None:
             # 创建简单的测试文档
@@ -56,8 +57,8 @@ def test_vector_store(documents):
             ]
             logger.info("使用测试文档进行向量库测试")
         
-        vector_store = build_or_load_vector_store(documents, persist_directory)
-        logger.info("向量库创建/加载成功")
+        vector_store = load_vector_store_with_cache(documents, persist_directory)
+        logger.info("向量库加载成功")
         
         # 测试相似性搜索
         logger.info("测试相似性搜索...")

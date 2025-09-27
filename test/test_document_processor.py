@@ -13,7 +13,7 @@ import unittest
 # 添加项目根目录到Python路径
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..")
 
-from etl.document_processor import load_and_process_documents, extract_content_and_store
+from etl.document_processor import load_and_process_documents, extract_and_save_content
 
 
 class TestDocumentProcessor(unittest.TestCase):
@@ -42,13 +42,13 @@ class TestDocumentProcessor(unittest.TestCase):
         self.assertGreater(len(documents), 0, "应该至少加载一个文档")
         self.assertIn("测试文档", documents[0].page_content, "文档内容应该包含测试文本")
     
-    def test_extract_content_and_store(self):
+    def test_extract_and_save_content(self):
         """测试内容提取和存储功能"""
         # 先加载文档
         documents = load_and_process_documents(self.test_dir)
         
         # 提取并存储内容
-        extracted_content = extract_content_and_store(documents, self.processed_data_dir)
+        extracted_content = extract_and_save_content(documents, self.processed_data_dir)
         
         # 验证结果
         self.assertEqual(len(extracted_content), len(documents), "提取的内容数量应该与文档数量一致")
@@ -69,13 +69,13 @@ class TestDocumentProcessor(unittest.TestCase):
         # 验证结果
         self.assertEqual(len(documents), 0, "空目录应该返回空文档列表")
     
-    def test_extract_content_and_store_without_storage(self):
+    def test_extract_and_save_content_without_storage(self):
         """测试不指定存储路径的内容提取"""
         # 先加载文档
         documents = load_and_process_documents(self.test_dir)
         
         # 提取内容但不存储
-        extracted_content = extract_content_and_store(documents)
+        extracted_content = extract_and_save_content(documents)
         
         # 验证结果
         self.assertEqual(len(extracted_content), len(documents), "提取的内容数量应该与文档数量一致")

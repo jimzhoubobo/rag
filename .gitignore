@@ -12,6 +12,7 @@ build/
 develop-eggs/
 dist/
 downloads/
+models/
 eggs/
 .eggs/
 lib/
@@ -144,6 +145,9 @@ Thumbs.db
 # Project specific files and directories
 .env
 chroma_db/
+data/
+data/** /*
+models/** /*
 processed_data/
 *.db
 
@@ -155,8 +159,8 @@ tmp/
 temp/
 
 # Data files
-data/**/*.pdf
-data/**/*.txt
+etl/data/**/*.pdf
+etl/data/**/*.txt
 !data/.gitkeep
 
 # Python .env files

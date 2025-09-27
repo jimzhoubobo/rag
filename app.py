@@ -1,11 +1,12 @@
 import streamlit as st
 import os
 from dotenv import load_dotenv
-from rag.rag_core import build_or_load_vector_store, get_qa_chain, get_answer
+from rag.rag_core import load_vector_store_with_cache, get_qa_chain, get_answer
 from etl.document_processor import load_and_process_documents
+from constant.constants import ProjectConstants
 import tempfile
-from rag.logger import logger
-
+from log.logger import logger
+# 加载环境变量 入口
 # 加载环境变量
 load_dotenv()
 
@@ -65,7 +66,7 @@ if 'qa_chain' not in st.session_state:
         # 直接加载已存在的向量库，不重新处理文档目录中的文件
         logger.info("正在加载向量库...")
             
-        vector_store = build_or_load_vector_store(documents, "./chroma_db")
+        vector_store = load_vector_store_with_cache(documents, ProjectConstants.get_chroma_db_path())
         
         # 创建QA链
         logger.info("正在创建问答链...")

@@ -1,70 +1,28 @@
 import os
 from langchain_community.vectorstores import Chroma
-from langchain_community.embeddings import HuggingFaceBgeEmbeddings
 from langchain.chains import RetrievalQA
 from langchain.prompts import PromptTemplate
 from langchain_openai import ChatOpenAI
-from etl.document_processor import load_and_process_documents
-from rag.logger import logger
+from log.logger import logger
+from cache.cache import ttl_cache
 
-def build_or_load_vector_store(documents, persist_directory: str):
+# 导入向量库加载函数
+from etl.vector_builder import load_vector_store
+
+
+@ttl_cache(expire_time=600)  # 10分钟缓存
+def load_vector_store_with_cache(documents, persist_directory: str):
     """
-    构建或加载Chroma向量库。
+    从持久化目录加载Chroma向量库，使用缓存机制。
+    
+    Args:
+        documents: 文档列表（此参数仅为保持接口兼容性，实际不使用）
+        persist_directory (str): 向量库存储目录
+        
+    Returns:
+        Chroma: 加载的向量库实例
     """
-    logger.info(f"开始构建或加载向量库，文档数: {len(documents)}")
-    
-    # 如果没有文档，创建一个测试文档
-    if len(documents) == 0:
-        logger.info("没有文档，创建测试文档...")
-        from langchain.docstore.document import Document
-        documents = [Document(page_content="这是测试文档内容，用于初始化向量库。", metadata={"source": "test"})]
-    
-    # 检查是否已存在向量库
-    if os.path.exists(persist_directory) and os.listdir(persist_directory):
-        # 加载现有向量库
-        logger.info("加载现有向量库...")
-        try:
-            embedding = HuggingFaceBgeEmbeddings(
-                model_name="BAAI/bge-large-zh-v1.5"
-            )
-            vector_store = Chroma(persist_directory=persist_directory, embedding_function=embedding)
-            logger.info("现有向量库加载完成")
-        except Exception as e:
-            # 如果BGE模型加载失败，使用替代方案
-            logger.warning(f"BGE模型加载失败，使用替代方案: {e}")
-            from langchain_community.embeddings import HuggingFaceEmbeddings
-            embedding = HuggingFaceEmbeddings(
-                model_name="sentence-transformers/all-MiniLM-L6-v2"
-            )
-            vector_store = Chroma(persist_directory=persist_directory, embedding_function=embedding)
-    else:
-        # 创建新的向量库
-        logger.info("创建新的向量库...")
-        try:
-            embedding = HuggingFaceBgeEmbeddings(
-                model_name="BAAI/bge-large-zh-v1.5"
-            )
-            vector_store = Chroma.from_documents(
-                documents=documents,
-                embedding=embedding,
-                persist_directory=persist_directory
-            )
-            logger.info("新向量库创建完成")
-        except Exception as e:
-            # 如果BGE模型加载失败，使用替代方案
-            logger.warning(f"BGE模型加载失败，使用替代方案: {e}")
-            from langchain_community.embeddings import HuggingFaceEmbeddings
-            embedding = HuggingFaceEmbeddings(
-                model_name="sentence-transformers/all-MiniLM-L6-v2"
-            )
-            vector_store = Chroma.from_documents(
-                documents=documents,
-                embedding=embedding,
-                persist_directory=persist_directory
-            )
-            logger.info("使用替代方案创建向量库完成")
-    
-    return vector_store
+    return load_vector_store(persist_directory)
 
 
 def _create_prompt_template():

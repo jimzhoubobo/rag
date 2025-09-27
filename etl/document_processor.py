@@ -9,7 +9,7 @@ import os
 from langchain_community.document_loaders import PyPDFLoader, TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 import json
-from rag.logger import logger
+from log.logger import logger
 
 
 def load_and_process_documents(data_path: str):
@@ -35,6 +35,9 @@ def load_and_process_documents(data_path: str):
             file_path = os.path.join(root, file)
             file_extension = os.path.splitext(file)[1].lower()
             
+            if file_extension not in supported_extensions:
+                continue
+                
             try:
                 if file_extension == '.pdf':
                     logger.info(f"加载PDF文件: {file_path}")
@@ -71,9 +74,9 @@ def load_and_process_documents(data_path: str):
     return splits
 
 
-def extract_content_and_store(documents, storage_path: str = None):
+def extract_and_save_content(documents, storage_path: str = None):
     """
-    提取文档内容并存储到指定位置
+    提取文档内容并保存到指定位置
     
     Args:
         documents (list): 文档列表
@@ -115,5 +118,5 @@ if __name__ == "__main__":
         os.makedirs(data_path)
     
     documents = load_and_process_documents(data_path)
-    extracted = extract_content_and_store(documents, "../processed_data")
+    extracted = extract_and_save_content(documents, "../processed_data")
     logger.info(f"处理完成，共处理 {len(extracted)} 个文档片段")

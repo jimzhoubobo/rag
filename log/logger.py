@@ -13,10 +13,10 @@ log_file = os.path.join(log_dir, "tcm-rag-qa.log")
 logger = logging.getLogger("tcm_rag_qa")
 logger.setLevel(logging.INFO)
 
-# 创建滚动文件处理器(最大50MB，保留10个备份文件)
+# 创建滚动文件处理器(最大10MB，保留10个备份文件)
 handler = RotatingFileHandler(
     log_file, 
-    maxBytes=50*1024*1024,  # 50MB
+    maxBytes=10*1024*1024,  # 10MB
     backupCount=10,
     encoding='utf-8'
 )
