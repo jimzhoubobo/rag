@@ -8,6 +8,8 @@ from cache.cache import ttl_cache
 
 # 导入向量库加载函数
 from etl.vector_builder import load_vector_store
+# 导入版本管理器
+from etl.vector_version_manager import vector_version_manager
 
 
 @ttl_cache(expire_time=600)  # 10分钟缓存
@@ -22,7 +24,13 @@ def load_vector_store_with_cache(documents, persist_directory: str):
     Returns:
         Chroma: 加载的向量库实例
     """
-    return load_vector_store(persist_directory)
+    # 使用版本管理器获取当前活动版本路径
+    active_version_path = vector_version_manager.get_active_version_path()
+    if active_version_path and os.path.exists(active_version_path):
+        return load_vector_store(active_version_path)
+    else:
+        # 如果没有活动版本或路径不存在，回退到原来的persist_directory
+        return load_vector_store(persist_directory)
 
 
 def _create_prompt_template():
@@ -46,7 +54,7 @@ def _create_prompt_template():
     return PromptTemplate.from_template(template)
 
 
-def get_qa_chain(vector_store):
+def get_qa_chain(vector_store, top_k: int = 4):
     """
     初始化DeepSeek LLM，创建并返回一个配置好的RetrievalQA链。
     """
@@ -74,7 +82,7 @@ def get_qa_chain(vector_store):
     qa_chain = RetrievalQA.from_chain_type(
         llm=llm,
         chain_type="stuff",
-        retriever=vector_store.as_retriever(search_kwargs={"k": 4}),
+        retriever=vector_store.as_retriever(search_kwargs={"k": top_k}),
         return_source_documents=True,
         chain_type_kwargs={"prompt": prompt}
     )
@@ -83,11 +91,13 @@ def get_qa_chain(vector_store):
     return qa_chain
 
 
-def get_answer(question, qa_chain):
+def get_answer(question, qa_chain, top_k: int = 4):
     """
     一个工具函数，用于执行问答链并返回答案。
     """
     logger.info(f"开始处理问题: {question}")
+    # 更新 retriever 的 k 值
+    qa_chain.retriever.search_kwargs["k"] = top_k
     result = qa_chain.invoke({"query": question})
     logger.info("问题处理完成")
     return result

@@ -58,6 +58,16 @@ class TestVectorBuilder(unittest.TestCase):
         self.assertTrue(os.path.exists(self.vector_store_dir), "向量库目录应该存在")
         self.assertTrue(os.listdir(self.vector_store_dir), "向量库目录不应该为空")
     
+    def test_build_vector_store_with_batching(self):
+        """测试分批构建向量库"""
+        # 构建向量库，指定较小的批次大小
+        vector_store = build_vector_store(self.test_documents, self.vector_store_dir, batch_size=1)
+        
+        # 验证结果
+        self.assertIsNotNone(vector_store, "向量库应该构建成功")
+        self.assertTrue(os.path.exists(self.vector_store_dir), "向量库目录应该存在")
+        self.assertTrue(os.listdir(self.vector_store_dir), "向量库目录不应该为空")
+    
     def test_load_vector_store(self):
         """测试加载向量库"""
         # 先构建向量库

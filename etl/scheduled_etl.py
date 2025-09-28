@@ -15,7 +15,7 @@ sys.path.insert(0, project_root)
 
 from etl.document_processor import load_and_process_documents, extract_and_save_content
 from etl.vector_builder import build_vector_store
-from log.logger import logger
+from etl.vector_version_manager import vector_version_manager
 from log.logger import logger
 from constant.constants import ProjectConstants
 
@@ -30,7 +30,6 @@ def etl_job():
         # 定义数据路径
         data_path = ProjectConstants.get_data_path()
         processed_data_path = ProjectConstants.get_processed_data_path()
-        vector_store_path = ProjectConstants.get_chroma_db_path()
         
         # 确保数据目录存在
         os.makedirs(data_path, exist_ok=True)
@@ -40,13 +39,17 @@ def etl_job():
         documents = load_and_process_documents(data_path)
         
         # 提取内容并存储
-        extracted_content = extract_and_save_content(documents, processed_data_path)
+        # extracted_content = extract_and_save_content(documents, processed_data_path)
         
-        # 构建向量库
+        # 使用版本管理器创建新版本并向量库
         if documents:
-            build_vector_store(documents, vector_store_path)
-        
-        logger.info(f"ETL任务执行完成，共处理 {len(extracted_content)} 个文档片段")
+            success = vector_version_manager.switch_to_new_version(documents)
+            if success:
+                logger.info(f"ETL任务执行完成，共处理 {len(documents)} 个文档片段，向量库版本已更新")
+            else:
+                logger.error("向量库版本更新失败")
+        else:
+            logger.info("没有文档需要处理")
         
     except Exception as e:
         logger.error(f"ETL任务执行出错: {e}")

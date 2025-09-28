@@ -71,7 +71,7 @@ if 'qa_chain' not in st.session_state:
         # 创建QA链
         logger.info("正在创建问答链...")
             
-        st.session_state.qa_chain = get_qa_chain(vector_store)
+        st.session_state.qa_chain = get_qa_chain(vector_store, top_k)
         
         logger.info("系统初始化完成!")
 
@@ -83,7 +83,7 @@ if question:
     with st.spinner("正在生成答案..."):
         logger.info(f"收到问题: {question}")
             
-        result = get_answer(question, st.session_state.qa_chain)
+        result = get_answer(question, st.session_state.qa_chain, top_k)
         
         logger.info("答案生成完成")
         
