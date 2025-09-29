@@ -219,7 +219,6 @@ def update_vector_store(documents, persist_directory: str, batch_size: int = VEC
         logger.error(f"更新向量库时出错: {e}")
         # 如果更新失败，重新构建向量库
         return build_vector_store(documents, persist_directory, batch_size)
-        return build_vector_store(documents, persist_directory, batch_size)
 
 
 def load_vector_store(persist_directory: str):
