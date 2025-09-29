@@ -58,8 +58,6 @@ def init_embedding():
         logger.info("使用替代方案初始化嵌入模型成功")
         return embedding
 
-
-def build_vector_store(documents, persist_directory: str, batch_size: int = 50):
 def build_vector_store(documents, persist_directory: str, batch_size: int = 50):
     """
     分批构建Chroma向量库
@@ -176,7 +174,6 @@ def build_vector_store(documents, persist_directory: str, batch_size: int = 50):
         return vector_store
 
 
-def update_vector_store(documents, persist_directory: str, batch_size: int = VECTOR_STORE_BATCH_SIZE):
 def update_vector_store(documents, persist_directory: str, batch_size: int = VECTOR_STORE_BATCH_SIZE):
     """
     分批更新现有的Chroma向量库
