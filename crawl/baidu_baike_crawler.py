@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """
-百度百科中医相关条目爬虫
-用于爬取中医相关的百科内容，为RAG系统准备数据
+百度百科经络相关条目爬虫
+用于爬取经络相关的百科内容，为RAG系统准备数据
 """
 
 import requests
@@ -203,21 +203,21 @@ class BaiduBaikeCrawler:
     
     def crawl_tcm_keywords(self, keywords=None):
         """
-        爬取中医相关关键词
+        爬取经络相关关键词
         
         Args:
             keywords (list): 关键词列表，如果为None则使用默认列表
         """
         if keywords is None:
-            # 默认的中医相关关键词
+            # 默认的经络相关关键词
             keywords = [
-                "中医", "中药", "针灸", "推拿", "拔罐", 
+                "经络", "中药", "针灸", "推拿", "拔罐",
                 "刮痧", "艾灸", "经络", "穴位", "气血",
                 "阴阳", "五行", "脏腑", "脉象", "辨证论治",
                 "四诊", "望闻问切", "中药方剂", "中草药", "中药材"
             ]
         
-        logger.info(f"开始爬取 {len(keywords)} 个中医相关词条")
+        logger.info(f"开始爬取 {len(keywords)} 个经络相关词条")
         
         success_count = 0
         for i, keyword in enumerate(keywords, 1):
@@ -246,7 +246,7 @@ def main():
     # 创建爬虫实例
     crawler = BaiduBaikeCrawler(output_dir=ProjectConstants.get_data_path())
     
-    # 爬取中医相关词条
+    # 爬取经络相关词条
     crawler.crawl_tcm_keywords()
 
 

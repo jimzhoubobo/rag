@@ -18,7 +18,7 @@ def main():
     crawler = BaiduBaikeCrawler()
     
     # 测试爬取单个词条
-    test_keywords = ["中医", "针灸", "中药"]
+    test_keywords = ["经络", "针灸", "中药"]
     
     print("开始测试爬虫...")
     for keyword in test_keywords:

@@ -91,7 +91,7 @@ def test_get_answer(qa_chain):
     logger.info("=== 测试获取答案功能 ===")
     try:
         from rag.rag_core import get_answer
-        test_question = "什么是中医理疗？"
+        test_question = "什么是经络理疗？"
         logger.info(f"测试问题: {test_question}")
         
         result = get_answer(test_question, qa_chain)
