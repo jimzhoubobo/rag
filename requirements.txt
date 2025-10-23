@@ -9,3 +9,4 @@ pypdf>=6.1.0
 python-dotenv>=1.1.1
 safetensors>=0.6.2
 schedule>=1.2.2
+cohere>=5.19.0
