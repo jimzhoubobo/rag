@@ -20,6 +20,8 @@ from cache.cache import ttl_cache
 from etl.vector_builder import load_vector_store, init_embedding
 # 导入版本管理器
 from etl.vector_version_manager import vector_version_manager
+# 导入问答历史管理模块
+from rag.qa_history_manager import save_qa_history, save_qa_history_async, handle_task_exception
 
 
 @ttl_cache(expire_time=600)  # 10分钟缓存
@@ -106,45 +108,12 @@ def _create_fallback_prompt_b():
 
 def _initialize_database():
     """初始化SQLite数据库和表"""
-    db_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "qa_history.db")
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-    
-    # 创建表来存储问答历史
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS qa_history (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            group_name TEXT NOT NULL,
-            user_id TEXT,
-            device_id TEXT,
-            question TEXT NOT NULL,
-            answer TEXT NOT NULL,
-            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    
-    conn.commit()
-    conn.close()
-    return db_path
+    pass
 
 
 async def _initialize_database_async():
     """异步初始化SQLite数据库和表"""
-    db_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "qa_history.db")
-    async with aiosqlite.connect(db_path) as db:
-        await db.execute('''
-            CREATE TABLE IF NOT EXISTS qa_history (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                group_name TEXT NOT NULL,
-                user_id TEXT,
-                device_id TEXT,
-                question TEXT NOT NULL,
-                answer TEXT NOT NULL,
-                timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-        ''')
-        await db.commit()
-    return db_path
+    pass
 
 
 def _get_group_name(user_id: str, device_id: str, num_groups: int = 2) -> str:
@@ -177,76 +146,6 @@ def _get_group_name(user_id: str, device_id: str, num_groups: int = 2) -> str:
     else:
         logger.info("匿名用户默认分到组0")
         return "group_0"  # 匿名用户默认分到组0
-
-
-def _save_qa_history(group_name: str, user_id: str, device_id: str, question: str, answer: str):
-    """
-    保存问答历史到SQLite数据库
-    
-    Args:
-        group_name (str): 分组名称
-        user_id (str): 用户ID
-        device_id (str): 设备ID
-        question (str): 用户问题
-        answer (str): 回答内容
-    """
-    try:
-        db_path = _initialize_database()
-        conn = sqlite3.connect(db_path)
-        cursor = conn.cursor()
-        
-        cursor.execute('''
-            INSERT INTO qa_history (group_name, user_id, device_id, question, answer)
-            VALUES (?, ?, ?, ?, ?)
-        ''', (group_name, user_id, device_id, question, answer))
-        
-        conn.commit()
-        conn.close()
-        logger.info("问答历史保存成功")
-    except Exception as e:
-        logger.error(f"保存问答历史时出错: {e}")
-
-
-async def _save_qa_history_async(group_name: str, user_id: str, device_id: str, question: str, answer: str):
-    """
-    异步保存问答历史到SQLite数据库
-    
-    Args:
-        group_name (str): 分组名称
-        user_id (str): 用户ID
-        device_id (str): 设备ID
-        question (str): 用户问题
-        answer (str): 回答内容
-    """
-    try:
-        db_path = await _initialize_database_async()
-        async with aiosqlite.connect(db_path) as db:
-            await db.execute('''
-                INSERT INTO qa_history (group_name, user_id, device_id, question, answer)
-                VALUES (?, ?, ?, ?, ?)
-            ''', (group_name, user_id, device_id, question, answer))
-            await db.commit()
-        logger.info("问答历史异步保存成功")
-    except Exception as e:
-        logger.error(f"异步保存问答历史时出错: {e}")
-        # 异常时尝试同步保存作为兜底方案
-        _save_qa_history(group_name, user_id, device_id, question, answer)
-
-
-def _handle_task_exception(task_name: str, task: asyncio.Task):
-    """
-    处理异步任务异常的回调函数
-    
-    Args:
-        task_name (str): 任务名称
-        task (asyncio.Task): 异步任务对象
-    """
-    try:
-        # 获取任务结果，这会抛出任务中未处理的异常
-        task.result()
-    except Exception as e:
-        logger.error(f"异步任务 {task_name} 执行出错: {e}")
-        # 可以在这里添加额外的错误处理逻辑
 
 
 def get_qa_chain(vector_store, top_k: int = 4, user_id: str = None, device_id: str = None):
@@ -426,19 +325,19 @@ def get_answer(question, qa_chain, top_k: int = 4):
         if loop and loop.is_running():
             # 如果事件循环正在运行，则创建异步任务
             task = loop.create_task(
-                _save_qa_history_async(group_name, user_id, device_id, question, result)
+                save_qa_history_async(group_name, user_id, device_id, question, result)
             )
             # 添加任务完成回调，用于处理异常
-            task.add_done_callback(functools.partial(_handle_task_exception, "保存问答历史"))
+            task.add_done_callback(functools.partial(handle_task_exception, "保存问答历史"))
             logger.info("异步保存问答历史任务已创建")
         else:
             # 如果没有运行中的事件循环，则使用同步方法
-            _save_qa_history(group_name, user_id, device_id, question, result)
+            save_qa_history(group_name, user_id, device_id, question, result)
             logger.info("同步保存问答历史完成")
     except Exception as e:
         # 如果异步保存失败，回退到同步方法
         logger.warning(f"异步保存问答历史失败，回退到同步方法: {e}")
-        _save_qa_history(group_name, user_id, device_id, question, result)
+        save_qa_history(group_name, user_id, device_id, question, result)
         logger.info("同步保存问答历史完成")
     
     # 返回结果，保持与之前相同的格式

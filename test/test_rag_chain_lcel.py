@@ -10,8 +10,6 @@ import sys
 import traceback
 from dotenv import load_dotenv
 
-from rag.rag_core import load_vector_store_with_cache
-
 # 添加项目根目录到Python路径
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + "/..")
 
@@ -21,7 +19,37 @@ load_dotenv()
 from log.logger import logger
 from constant.constants import ProjectConstants
 from langchain.docstore.document import Document
+from rag.rag_core import load_vector_store_with_cache
 
+def test_vector_store():
+    """测试向量库功能"""
+    logger.info("=== 测试向量库功能 ===")
+    try:
+        persist_directory = ProjectConstants.get_chroma_db_path()
+        
+        # 创建简单的测试文档
+        documents = [
+            Document(page_content="经络是中医理论的重要组成部分，它是运行气血、联络脏腑肢节、沟通上下内外的通路。", metadata={"source": "test"}),
+            Document(page_content="针灸是通过对穴位的刺激来调节人体气血运行的一种治疗方法。", metadata={"source": "test"}),
+            Document(page_content="拔罐是一种通过在皮肤上造成负压来促进血液循环的疗法。", metadata={"source": "test"})
+        ]
+        logger.info("使用测试文档进行向量库测试")
+        
+        vector_store = load_vector_store_with_cache(documents, persist_directory)
+        logger.info("向量库加载成功")
+        
+        # 测试相似性搜索
+        logger.info("测试相似性搜索...")
+        search_results = vector_store.similarity_search("中医", k=1)
+        logger.info(f"搜索到 {len(search_results)} 个结果")
+        if search_results:
+            logger.info(f"第一个结果: {search_results[0].page_content[:100]}...")
+        
+        return vector_store
+    except Exception as e:
+        logger.error(f"向量库测试失败: {e}")
+        traceback.print_exc()
+        return None
 
 
 def test_qa_chain_with_relevant_question():
@@ -120,3 +148,11 @@ def test_get_answer_function():
         logger.error(f"获取答案测试失败: {e}")
         traceback.print_exc()
         return False
+
+if __name__ == '__main__':
+    test_vector_store()
+    test_qa_chain_with_relevant_question()
+    test_qa_chain_with_irrelevant_question()
+    test_qa_chain_with_anonymous_user()
+    test_get_answer_function()
+    logger.info("所有测试完成")
