@@ -23,37 +23,6 @@ from constant.constants import ProjectConstants
 from langchain.docstore.document import Document
 
 
-def test_vector_store():
-    """测试向量库功能"""
-    logger.info("=== 测试向量库功能 ===")
-    try:
-        from rag.rag_core import load_vector_store_with_cache
-        persist_directory = ProjectConstants.get_chroma_db_path()
-        
-        # 创建简单的测试文档
-        documents = [
-            Document(page_content="经络是中医理论的重要组成部分，它是运行气血、联络脏腑肢节、沟通上下内外的通路。", metadata={"source": "test"}),
-            Document(page_content="针灸是通过对穴位的刺激来调节人体气血运行的一种治疗方法。", metadata={"source": "test"}),
-            Document(page_content="拔罐是一种通过在皮肤上造成负压来促进血液循环的疗法。", metadata={"source": "test"})
-        ]
-        logger.info("使用测试文档进行向量库测试")
-        
-        vector_store = load_vector_store_with_cache(documents, persist_directory)
-        logger.info("向量库加载成功")
-        
-        # 测试相似性搜索
-        logger.info("测试相似性搜索...")
-        search_results = vector_store.similarity_search("中医", k=1)
-        logger.info(f"搜索到 {len(search_results)} 个结果")
-        if search_results:
-            logger.info(f"第一个结果: {search_results[0].page_content[:100]}...")
-        
-        return vector_store
-    except Exception as e:
-        logger.error(f"向量库测试失败: {e}")
-        traceback.print_exc()
-        return None
-
 
 def test_qa_chain_with_relevant_question():
     """测试问答链功能 - 相关问题"""
@@ -80,9 +49,10 @@ def test_qa_chain_with_relevant_question():
         return False
 
 
-def test_qa_chain_with_irrelevant_question(vector_store):
+def test_qa_chain_with_irrelevant_question():
     """测试问答链功能 - 不相关问题"""
     logger.info("=== 测试问答链功能 - 不相关问题 ===")
+    vector_store = load_vector_store_with_cache([], ProjectConstants.get_chroma_db_path())
     try:
         from rag.rag_core import get_qa_chain
         # 测试用户ID为group_1的用户（应该使用fallback_chain_b）
@@ -104,9 +74,10 @@ def test_qa_chain_with_irrelevant_question(vector_store):
         return False
 
 
-def test_qa_chain_with_anonymous_user(vector_store):
+def test_qa_chain_with_anonymous_user():
     """测试问答链功能 - 匿名用户"""
     logger.info("=== 测试问答链功能 - 匿名用户 ===")
+    vector_store = load_vector_store_with_cache([], ProjectConstants.get_chroma_db_path())
     try:
         from rag.rag_core import get_qa_chain
         # 测试匿名用户（应该使用fallback_chain_a，即group_0）
@@ -128,9 +99,10 @@ def test_qa_chain_with_anonymous_user(vector_store):
         return False
 
 
-def test_get_answer_function(vector_store):
+def test_get_answer_function():
     """测试get_answer函数"""
     logger.info("=== 测试get_answer函数 ===")
+    vector_store = load_vector_store_with_cache([], ProjectConstants.get_chroma_db_path())
     try:
         from rag.rag_core import get_qa_chain, get_answer
         qa_chain = get_qa_chain(vector_store)
@@ -148,40 +120,3 @@ def test_get_answer_function(vector_store):
         logger.error(f"获取答案测试失败: {e}")
         traceback.print_exc()
         return False
-
-
-def main():
-    """主测试函数"""
-    logger.info("RAG核心模块LCEL重构测试开始")
-    logger.info("=" * 50)
-    
-    # 测试1: 向量库
-    vector_store = test_vector_store()
-    
-    if vector_store:
-        # 测试2: 问答链 - 相关问题
-        test1_passed = test_qa_chain_with_relevant_question(vector_store)
-        
-        # 测试3: 问答链 - 不相关问题
-        test2_passed = test_qa_chain_with_irrelevant_question(vector_store)
-        
-        # 测试4: 问答链 - 匿名用户
-        test3_passed = test_qa_chain_with_anonymous_user(vector_store)
-        
-        # 测试5: get_answer函数
-        test4_passed = test_get_answer_function(vector_store)
-        
-        logger.info("=" * 50)
-        if all([test1_passed, test2_passed, test3_passed, test4_passed]):
-            logger.info("所有测试通过!")
-        else:
-            logger.info("部分测试失败，请检查日志!")
-    else:
-        logger.error("向量库测试失败，无法继续后续测试")
-    
-    logger.info("=" * 50)
-    logger.info("RAG核心模块LCEL重构测试结束")
-
-
-if __name__ == "__main__":
-    main()

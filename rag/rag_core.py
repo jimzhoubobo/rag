@@ -280,7 +280,7 @@ def get_qa_chain(vector_store, top_k: int = 4, user_id: str = None, device_id: s
     logger.info("LLM初始化完成")
     
     # 创建基础retriever，使用top_k参数控制检索的文档数量
-    base_retriever = vector_store.as_retriever(search_kwargs={"k": 10})
+    base_retriever = vector_store.as_retriever(search_kwargs={"k": 10}, search_type="mmr")
     logger.info("基础检索器创建完成")
     
     # 创建Cohere重排序器
